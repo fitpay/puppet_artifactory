@@ -69,19 +69,22 @@ define artifactory::artifact(
     $args = ''
   }
 
-  $includeClass = ''
   if ($classifier) {
     $includeClass = "-c ${classifier}"
+  } else {
+    $includeClass = ''
   }
 
-  $includeRepo = ''
   if ($repository) {
     $includeRepo = "-r ${repository}"
+  } else {
+    $includeRepo = ''
   }
 
-  $timestampedRepo = ''
   if ($timestamped) {
     $timestampedRepo = '-t'
+  } else {
+    $timestampedRepo = ''
   }
 
   $cmd = "/opt/artifactory-script/download-artifact-from-artifactory.sh -a ${gav} -e ${packaging} ${includeClass} -n ${artifactory::artifactory_url} ${includeRepo} ${timestampedRepo} -o ${output} ${args} -v"
