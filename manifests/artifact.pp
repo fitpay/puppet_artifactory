@@ -69,14 +69,17 @@ define artifactory::artifact(
     $args = ''
   }
 
+  $includeClass = ''
   if ($classifier) {
     $includeClass = "-c ${classifier}"
   }
 
+  $includeRepo = ''
   if ($repository) {
     $includeRepo = "-r ${repository}"
   }
 
+  $timestampedRepo = ''
   if ($timestamped) {
     $timestampedRepo = '-t'
   }
