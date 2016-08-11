@@ -79,19 +79,34 @@ function get_timestamp_and_build()
     local __ts=
     local __build=
 
+    echo "__timestamp_result (pre)=$__timestamp_result" >> /tmp/artifactory_request.log
+    echo "__build_result (pre)=$__build_result" >> /tmp/artifactory_request.log
+    echo "__request_url=$__request_url" >> /tmp/artifactory_request.log
+    echo "__maven_metadata=$__maven_metadata" >> /tmp/artifactory_request.log
+
     # Retrieve the maven-metadata.xml file
     curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted
+
+    echo "curl return code: $?" >> /tmp/artifactory_request.log
+
     # Command to extract the timestamp
-    __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" \
-        | tr '<>' '  ' | awk '{ print $2 }'`
+    __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" | tr '<>' '  ' | awk '{ print $2 }'`
+
+    echo "__ts=$__ts" >> /tmp/artifactory_request.log
+
     # Command to extract the build number
-    __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" \
-        | tr '<>' '  ' | awk '{ print $2 }'`
+    __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" | tr '<>' '  ' | awk '{ print $2 }'`
+
+    echo "__build=$__build" >> /tmp/artifactory_request.log
+
     # Remove the maven-metadata.xml file
     #rm ${__maven_metadata}
 
     eval ${__timestamp_result}="'${__ts}'"
     eval ${__build_result}="'${__build}'"
+
+    echo "__timestamp_result (post)=$__timestamp_result" >> /tmp/artifactory_request.log
+    echo "__build_result (post)=$__build_result" >> /tmp/artifactory_request.log
 }
 
 # Read in Complete Set of Coordinates from the Command Line
