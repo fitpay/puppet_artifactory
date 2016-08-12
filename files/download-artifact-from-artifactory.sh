@@ -96,12 +96,21 @@ function get_timestamp_and_build()
     __debug=`cat ${__maven_metadata}`
     echo "file contents: $__debug" >> /tmp/artifactory_request.log
 
-    __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" | tr '<>' '  ' | awk '{ print $2 }'`
+    if [ -f /usr/bin/xmllint ]; then
+      echo "using xmllint to extract __ts" >> /tmp/artifactory_request.log
+      __ts=`/usr/bin/xmllint --xpath '/metadata/versioning/snapshot/timestamp/text()' ${__maven_metadata}`
+    else
+      __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" | tr '<>' '  ' | awk '{ print $2 }'`
+    fi
 
     echo "__ts=$__ts" >> /tmp/artifactory_request.log
 
-    # Command to extract the build number
-    __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" | tr '<>' '  ' | awk '{ print $2 }'`
+    if [ -f /usr/bin/xmllint ]; then
+      echo "using xmllint to extract __build" >> /tmp/artifactory_request.log
+      __build=`/usr/bin/xmllint --xpath '/metadata/versioning/snapshot/buildNumber/text()' ${__maven_metadata}`
+    else
+      __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" | tr '<>' '  ' | awk '{ print $2 }'`
+    fi    
 
     echo "__build=$__build" >> /tmp/artifactory_request.log
 
@@ -113,7 +122,7 @@ function get_timestamp_and_build()
 
     echo "__timestamp_result (post)=$__timestamp_result" >> /tmp/artifactory_request.log
     echo "__build_result (post)=$__build_result" >> /tmp/artifactory_request.log
-    
+
     __md5=`openssl md5 ${__maven_metadata}`
     echo "md5 (second): $__md5" >> /tmp/artifactory_request.log
 
