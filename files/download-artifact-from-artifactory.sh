@@ -89,7 +89,13 @@ function get_timestamp_and_build()
 
     echo "curl return code: $?" >> /tmp/artifactory_request.log
 
+    __md5=`openssl md5 ${__maven_metadata}`
+    echo "md5 (first): $__md5" >> /tmp/artifactory_request.log
+
     # Command to extract the timestamp
+    __debug=`cat ${__maven_metadata}`
+    echo "file contents: $__debug" >> /tmp/artifactory_request.log
+
     __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" | tr '<>' '  ' | awk '{ print $2 }'`
 
     echo "__ts=$__ts" >> /tmp/artifactory_request.log
@@ -107,6 +113,10 @@ function get_timestamp_and_build()
 
     echo "__timestamp_result (post)=$__timestamp_result" >> /tmp/artifactory_request.log
     echo "__build_result (post)=$__build_result" >> /tmp/artifactory_request.log
+    
+    __md5=`openssl md5 ${__maven_metadata}`
+    echo "md5 (second): $__md5" >> /tmp/artifactory_request.log
+
 }
 
 # Read in Complete Set of Coordinates from the Command Line
