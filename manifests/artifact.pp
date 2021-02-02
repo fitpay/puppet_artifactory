@@ -12,6 +12,7 @@
 # [*repository*] : The repository such as 'public', 'central'... (defaults to
 # 'releases' or 'snapshots' depending on the version specified in gav
 # [*output*] : The output file (defaults to the resource name)
+# [*s3_bucket*] : if specified, will retrieve files via aws s3 api. if not specified, https is assumed with the Artifactory base url
 #
 # Actions:
 # If repository is set, its setting will be honoured.
@@ -87,7 +88,13 @@ define artifactory::artifact(
     $timestampedRepo = ''
   }
 
-  $cmd = "/opt/artifactory-script/download-artifact-from-artifactory.sh -a ${gav} -e ${packaging} ${includeClass} -n ${artifactory::artifactory_url} ${includeRepo} ${timestampedRepo} -o ${output} ${args} -v"
+  if ($artifactory::s3 == true) {
+    $s3 = "-s"
+  } else {
+    $s3 = ''
+  }
+
+  $cmd = "/opt/artifactory-script/download-artifact-from-artifactory.sh $s3 -a ${gav} -e ${packaging} ${includeClass} -n ${artifactory::artifactory_url} ${includeRepo} ${timestampedRepo} -o ${output} ${args} -v"
 
   if $ensure == present {
     exec { "Download ${gav}-${classifier} to ${output}":
