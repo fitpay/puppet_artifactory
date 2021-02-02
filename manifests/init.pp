@@ -20,28 +20,33 @@
 class artifactory(
   $url = '',
   $username = '',
-  $password = '')
-{
+  $password = '',
+  $s3 = false) {
 
   # Check arguments
   # url mandatory
   if $url == '' {
     fail('Cannot initialize the Artifactory class - the url parameter is mandatory')
   }
+
   $artifactory_url = $url
 
-  if ($username != '') and ($password == '') {
-    fail('Cannot initialize the Artifactory class - both username and password must be set')
-  } elsif ($username == '') and ($password != '') {
-    fail('Cannot initialize the Artifactory class - both username and password must be set')
-  } elsif ($username == '') and ($password == '') {
+  if $s3 == true {
+    #rely on iam authentication
     $authentication = false
   } else {
-    $authentication = true
-    $user = $username
-    $pwd = $password
+    if ($username != '') and ($password == '') {
+      fail('Cannot initialize the Artifactory class - both username and password must be set if not using s3')
+    } elsif ($username == '') and ($password != '') {
+      fail('Cannot initialize the Artifactory class - both username and password must be set if not using s3')
+    } elsif ($username == '') and ($password == '') {
+      $authentication = false
+    } else {
+      $authentication = true
+      $user = $username
+      $pwd = $password
+    }
   }
-
   # Install script
   file { '/opt/artifactory-script/download-artifact-from-artifactory.sh':
     ensure   => file,

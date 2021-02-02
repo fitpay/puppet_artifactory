@@ -3,7 +3,6 @@
 # Define Artifactory Configuration
 ARTIFACTORY_BASE=
 URL_BASE=/artifactory
-
 usage()
 {
     cat <<EOF
@@ -23,7 +22,8 @@ OPTIONS:
    -r    Repository
    -u    Username
    -p    Password
-   -n    Artifactory Base URL
+   -n    Artifactory Base URL (if using repo with a http endpoint. retrival via curl)
+   -s    url is an s3 source. retreive files via aws cli
 
 EOF
 }
@@ -80,7 +80,13 @@ function get_timestamp_and_build()
     local __build=
 
     # Retrieve the maven-metadata.xml file
-    curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted
+    if [[ ${S3} -eq 1 ]]
+      then
+        aws s3 cp ${__request_url} ${__maven_metadata} --quiet
+      else
+        curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted
+    fi
+
     # Command to extract the timestamp
     __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" \
         | tr '<>' '  ' | awk '{ print $2 }'`
@@ -105,10 +111,10 @@ USERNAME=
 PASSWORD=
 VERBOSE=0
 TIMESTAMPED_SNAPSHOT=0
-
 OUTPUT=
+S3=0
 
-while getopts "hvta:c:e:o:r:u:p:n:" OPTION
+while getopts "hvta:c:e:o:r:u:p:n:s" OPTION
 do
     case $OPTION in
         h)
@@ -150,6 +156,9 @@ do
             ;;
         n)
             ARTIFACTORY_BASE=$OPTARG
+            ;;
+        s)
+            S3=1
             ;;
         ?)
             echo "Illegal argument $OPTION=$OPTARG" >&2
@@ -194,7 +203,6 @@ then
     fi
 fi
 
-# Construct the base URL
 ARTIFACT_BASE_URL=${ARTIFACTORY_BASE}${URL_BASE}/${REPO}/${GROUP_ID}/${ARTIFACT_ID}/${VERSION}
 ARTIFACT_TARGET_NAME=$( artifact_target_name ${ARTIFACT_ID} ${VERSION} ${PACKAGING} ${CLASSIFIER} )
 
@@ -225,10 +233,16 @@ fi
 OUT=
 if [[ "$OUTPUT" != "" ]]
 then
-    OUT="-o $OUTPUT"
+    OUT="$OUTPUT"
 else
-    OUT="-o ${ARTIFACT_TARGET_NAME}"
+    OUT="${ARTIFACT_TARGET_NAME}"
 fi
 
-echo "Fetching Artifact from $REQUEST_URL..." >&2
-curl -sS -f -L ${REQUEST_URL} ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted
+echo "Fetching Artifact from $REQUEST_URL... to $OUT" >&2
+
+if [[ ${S3} -eq 1 ]]
+  then
+    aws s3 cp ${REQUEST_URL} ${OUT} --quiet
+  else
+    curl -sS -f -L ${REQUEST_URL} -o ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted
+fi
