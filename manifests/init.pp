@@ -21,8 +21,7 @@ class artifactory(
   $url = '',
   $username = '',
   $password = '',
-  $s3 = false)
-  {
+  $s3 = false) {
 
   # Check arguments
   # url mandatory
