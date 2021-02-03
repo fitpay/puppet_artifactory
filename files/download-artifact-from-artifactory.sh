@@ -81,10 +81,10 @@ function get_timestamp_and_build()
     local __ts=
     local __build=
 
-    echo "__timestamp_result (pre)=$__timestamp_result" >> ${artfiactory_log}
-    echo "__build_result (pre)=$__build_result" >> ${artfiactory_log}
-    echo "__request_url=$__request_url" >> ${artfiactory_log}
-    echo "__maven_metadata=$__maven_metadata" >> ${artfiactory_log}
+    echo "__timestamp_result (pre)=$__timestamp_result" >> ${artifactory_log}
+    echo "__build_result (pre)=$__build_result" >> ${artifactory_log}
+    echo "__request_url=$__request_url" >> ${artifactory_log}
+    echo "__maven_metadata=$__maven_metadata" >> ${artifactory_log}
 
     # Retrieve the maven-metadata.xml file
     if [[ ${S3} -eq 1 ]]; then
@@ -94,32 +94,32 @@ function get_timestamp_and_build()
     fi
 
     eval "${maven_metadata_cmd}"
-    echo "${maven_metadata_cmd} return code: $?" >> ${artfiactory_log}
+    echo "${maven_metadata_cmd} return code: $?" >> ${artifactory_log}
 
     __md5=`openssl md5 ${__maven_metadata}`
-    echo "md5 (first): $__md5" >> ${artfiactory_log}
+    echo "md5 (first): $__md5" >> ${artifactory_log}
 
     # Command to extract the timestamp
     __debug=`cat ${__maven_metadata}`
-    echo "file contents: $__debug" >> ${artfiactory_log}
+    echo "file contents: $__debug" >> ${artifactory_log}
 
     if [ -f /usr/bin/xmllint ]; then
-      echo "using xmllint to extract __ts" >> ${artfiactory_log}
+      echo "using xmllint to extract __ts" >> ${artifactory_log}
       __ts=`/usr/bin/xmllint --xpath '/metadata/versioning/snapshot/timestamp/text()' ${__maven_metadata}`
     else
       __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" | tr '<>' '  ' | awk '{ print $2 }'`
     fi
 
-    echo "__ts=$__ts" >> ${artfiactory_log}
+    echo "__ts=$__ts" >> ${artifactory_log}
 
     if [ -f /usr/bin/xmllint ]; then
-      echo "using xmllint to extract __build" >> ${artfiactory_log}
+      echo "using xmllint to extract __build" >> ${artifactory_log}
       __build=`/usr/bin/xmllint --xpath '/metadata/versioning/snapshot/buildNumber/text()' ${__maven_metadata}`
     else
       __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" | tr '<>' '  ' | awk '{ print $2 }'`
     fi
 
-    echo "__build=$__build" >> ${artfiactory_log}
+    echo "__build=$__build" >> ${artifactory_log}
 
     # Remove the maven-metadata.xml file
     #rm ${__maven_metadata}
@@ -127,11 +127,11 @@ function get_timestamp_and_build()
     eval ${__timestamp_result}="'${__ts}'"
     eval ${__build_result}="'${__build}'"
 
-    echo "__timestamp_result (post)=$__timestamp_result" >> ${artfiactory_log}
-    echo "__build_result (post)=$__build_result" >> ${artfiactory_log}
+    echo "__timestamp_result (post)=$__timestamp_result" >> ${artifactory_log}
+    echo "__build_result (post)=$__build_result" >> ${artifactory_log}
 
     __md5=`openssl md5 ${__maven_metadata}`
-    echo "md5 (second): $__md5" >> ${artfiactory_log}
+    echo "md5 (second): $__md5" >> ${artifactory_log}
 
 }
 
@@ -281,4 +281,4 @@ else
 fi
 
 eval "${get_artifact_cmd}"
-echo "${get_artifact_cmd} return code: $?" >> ${artfiactory_log}
+echo "${get_artifact_cmd} return code: $?" >> ${artifactory_log}
