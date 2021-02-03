@@ -1,6 +1,6 @@
 #!/bin/bash
 
-artfiactory_log="/var/log/artifactory/artifactory_request.log"
+artifactory_log="/var/log/artifactory/artifactory_request.log"
 
 # Define Artifactory Configuration
 ARTIFACTORY_BASE=
