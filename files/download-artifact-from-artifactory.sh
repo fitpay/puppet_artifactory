@@ -1,5 +1,7 @@
 #!/bin/bash
 
+artifactory_log="/var/log/artifactory/artifactory_request.log"
+
 # Define Artifactory Configuration
 ARTIFACTORY_BASE=
 URL_BASE=/artifactory
@@ -79,25 +81,58 @@ function get_timestamp_and_build()
     local __ts=
     local __build=
 
+    echo "__timestamp_result (pre)=$__timestamp_result" >> ${artfiactory_log}
+    echo "__build_result (pre)=$__build_result" >> ${artfiactory_log}
+    echo "__request_url=$__request_url" >> ${artfiactory_log}
+    echo "__maven_metadata=$__maven_metadata" >> ${artfiactory_log}
+
     # Retrieve the maven-metadata.xml file
-    if [[ ${S3} -eq 1 ]]
-      then
-        aws s3 cp ${__request_url} ${__maven_metadata} --quiet
-      else
-        curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted
+    if [[ ${S3} -eq 1 ]]; then
+      maven_metadata_cmd="aws s3 cp ${__request_url} ${__maven_metadata} --quiet"
+    else
+      maven_metadata_cmd="curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted"
     fi
 
+    eval "${maven_metadata_cmd}"
+    echo "${maven_metadata_cmd} return code: $?" >> ${artfiactory_log}
+
+    __md5=`openssl md5 ${__maven_metadata}`
+    echo "md5 (first): $__md5" >> ${artfiactory_log}
+
     # Command to extract the timestamp
-    __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" \
-        | tr '<>' '  ' | awk '{ print $2 }'`
-    # Command to extract the build number
-    __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" \
-        | tr '<>' '  ' | awk '{ print $2 }'`
+    __debug=`cat ${__maven_metadata}`
+    echo "file contents: $__debug" >> ${artfiactory_log}
+
+    if [ -f /usr/bin/xmllint ]; then
+      echo "using xmllint to extract __ts" >> ${artfiactory_log}
+      __ts=`/usr/bin/xmllint --xpath '/metadata/versioning/snapshot/timestamp/text()' ${__maven_metadata}`
+    else
+      __ts=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<timestamp>.*</timestamp>" | tr '<>' '  ' | awk '{ print $2 }'`
+    fi
+
+    echo "__ts=$__ts" >> ${artfiactory_log}
+
+    if [ -f /usr/bin/xmllint ]; then
+      echo "using xmllint to extract __build" >> ${artfiactory_log}
+      __build=`/usr/bin/xmllint --xpath '/metadata/versioning/snapshot/buildNumber/text()' ${__maven_metadata}`
+    else
+      __build=`cat ${__maven_metadata} | tr -d [:space:] | grep -o "<buildNumber>.*</buildNumber>" | tr '<>' '  ' | awk '{ print $2 }'`
+    fi
+
+    echo "__build=$__build" >> ${artfiactory_log}
+
     # Remove the maven-metadata.xml file
     #rm ${__maven_metadata}
 
     eval ${__timestamp_result}="'${__ts}'"
     eval ${__build_result}="'${__build}'"
+
+    echo "__timestamp_result (post)=$__timestamp_result" >> ${artfiactory_log}
+    echo "__build_result (post)=$__build_result" >> ${artfiactory_log}
+
+    __md5=`openssl md5 ${__maven_metadata}`
+    echo "md5 (second): $__md5" >> ${artfiactory_log}
+
 }
 
 # Read in Complete Set of Coordinates from the Command Line
@@ -231,18 +266,19 @@ fi
 
 # Output
 OUT=
-if [[ "$OUTPUT" != "" ]]
-then
-    OUT="$OUTPUT"
+if [[ "$OUTPUT" != "" ]]; then
+  OUT="$OUTPUT"
 else
-    OUT="${ARTIFACT_TARGET_NAME}"
+  OUT="${ARTIFACT_TARGET_NAME}"
 fi
 
 echo "Fetching Artifact from $REQUEST_URL... to $OUT" >&2
 
-if [[ ${S3} -eq 1 ]]
-  then
-    aws s3 cp ${REQUEST_URL} ${OUT} --quiet
-  else
-    curl -sS -f -L ${REQUEST_URL} -o ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted
+if [[ ${S3} -eq 1 ]]; then
+  get_artifact_cmd="aws s3 cp ${REQUEST_URL} ${OUT} --quiet"
+else
+  get_artifact_cmd="curl -sS -f -L ${REQUEST_URL} -o ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted"
 fi
+
+eval "${get_artifact_cmd}"
+echo "${get_artifact_cmd} return code: $?" >> ${artfiactory_log}
