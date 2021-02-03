@@ -91,7 +91,7 @@ function get_timestamp_and_build()
       maven_metadata_cmd="curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted"
     fi
 
-    eval "$maven_metadata_cmd"
+    eval "${maven_metadata_cmd}"
     echo "${maven_metadata_cmd} return code: $?" >> /tmp/artifactory_request.log
 
     __md5=`openssl md5 ${__maven_metadata}`
@@ -264,17 +264,19 @@ fi
 
 # Output
 OUT=
-if [[ "$OUTPUT" != "" ]]
-then
-    OUT="$OUTPUT"
+if [[ "$OUTPUT" != "" ]]; then
+  OUT="$OUTPUT"
 else
-    OUT="${ARTIFACT_TARGET_NAME}"
+  OUT="${ARTIFACT_TARGET_NAME}"
 fi
 
 echo "Fetching Artifact from $REQUEST_URL... to $OUT" >&2
 
 if [[ ${S3} -eq 1 ]]; then
-    aws s3 cp ${REQUEST_URL} ${OUT} --quiet
+  get_artifact_cmd="aws s3 cp ${REQUEST_URL} ${OUT} --quiet"
 else
-    curl -sS -f -L ${REQUEST_URL} -o ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted
+  get_artifact_cmd="curl -sS -f -L ${REQUEST_URL} -o ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted"
 fi
+
+eval "${get_artifact_cmd}"
+echo "${get_artifact_cmd} return code: $?" >> /tmp/artifactory_request.log
