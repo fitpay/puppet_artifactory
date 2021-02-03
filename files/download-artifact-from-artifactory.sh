@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir -p dir /var/log/artifactory
 artifactory_log="/var/log/artifactory/artifactory_request.log"
 
 # Define Artifactory Configuration
