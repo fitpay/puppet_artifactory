@@ -64,6 +64,8 @@ define artifactory::artifact(
 
   Exec { path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'], }
 
+  $region = $::facts['ec2_metadata']['placement']['region']
+
   if ($artifactory::authentication) {
     $args = "-u ${artifactory::user} -p '${artifactory::pwd}'"
   } else {
@@ -94,7 +96,7 @@ define artifactory::artifact(
     $s3 = ''
   }
 
-  $cmd = "/opt/artifactory-script/download-artifact-from-artifactory.sh $s3 -a ${gav} -e ${packaging} ${includeClass} -n ${artifactory::artifactory_url} ${includeRepo} ${timestampedRepo} -o ${output} ${args} -v"
+  $cmd = "/opt/artifactory-script/download-artifact-from-artifactory.sh -g $region $s3 -a ${gav} -e ${packaging} ${includeClass} -n ${artifactory::artifactory_url} ${includeRepo} ${timestampedRepo} -o ${output} ${args} -v"
 
   if $ensure == present {
     exec { "Download ${gav}-${classifier} to ${output}":
