@@ -89,7 +89,7 @@ function get_timestamp_and_build()
 
     # Retrieve the maven-metadata.xml file
     if [[ ${S3} -eq 1 ]]; then
-      maven_metadata_cmd="aws s3 cp ${__request_url} ${__maven_metadata} --quiet"
+      maven_metadata_cmd="aws s3 cp ${__request_url} ${__maven_metadata} --quiet --region ${REGION}"
     else
       maven_metadata_cmd="curl -sS -f -L ${__request_url} -o ${__maven_metadata} ${CURL_VERBOSE} --location-trusted"
     fi
@@ -149,8 +149,9 @@ VERBOSE=0
 TIMESTAMPED_SNAPSHOT=0
 OUTPUT=
 S3=0
+REGION=""
 
-while getopts "hvta:c:e:o:r:u:p:n:s" OPTION
+while getopts "hvta:c:e:o:r:u:p:n:g:s" OPTION
 do
     case $OPTION in
         h)
@@ -192,6 +193,9 @@ do
             ;;
         n)
             ARTIFACTORY_BASE=$OPTARG
+            ;;
+        g)
+            REGION=$OPTARG
             ;;
         s)
             S3=1
@@ -276,7 +280,7 @@ fi
 echo "Fetching Artifact from $REQUEST_URL... to $OUT" >&2
 
 if [[ ${S3} -eq 1 ]]; then
-  get_artifact_cmd="aws s3 cp ${REQUEST_URL} ${OUT} --quiet"
+  get_artifact_cmd="aws s3 cp ${REQUEST_URL} ${OUT} --quiet --region ${REGION}"
 else
   get_artifact_cmd="curl -sS -f -L ${REQUEST_URL} -o ${OUT} ${AUTHENTICATION} ${CURL_VERBOSE} --location-trusted"
 fi
