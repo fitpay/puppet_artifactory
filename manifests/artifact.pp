@@ -97,6 +97,8 @@ define artifactory::artifact(
   }
 
   $cmd = "/opt/artifactory-script/download-artifact-from-artifactory.sh -g $region $s3 -a ${gav} -e ${packaging} ${includeClass} -n ${artifactory::artifactory_url} ${includeRepo} ${timestampedRepo} -o ${output} ${args} -v"
+  notice("brian: $cmd")
+  notify {"brian $cmd":}
 
   if $ensure == present {
     exec { "Download ${gav}-${classifier} to ${output}":
